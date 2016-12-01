@@ -4,6 +4,8 @@ const GRAVITY = .2;
 const DISTANCE_DIVISOR = 20;
 const RUNNING_THRESHOLD = 2;
 const COUNTDOWN_GAP = 60;
+const GAME_TEXT_Y_OFFSET = 35;
+const PLAYER_X_OFFSET = 5;
 const ATTACK_TIME = 40;
 const PUNCH_BEGIN_DELAY = 0; // Percentage of beginning punch delay
 const PUNCH_END_DELAY = .33; // Percentage of end punch delay
@@ -244,7 +246,7 @@ PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
 
 // Add all assets to the loader
 PIXI.loader
-    .add("assets/spritesheet.json")
+    .add("assets/test.json")
     .add("fonts/athletic-stroke.fnt")
     .add("fonts/athletic-stroke-small.fnt")
     .add("audio/music1.mp3")
@@ -384,7 +386,8 @@ function loadMainMenu(first) {
     play.scale.x = 1/GAME_SCALE;
     play.scale.y = 1/GAME_SCALE;
     play.interactive = true, play.buttonMode = true;
-    play.on("mousedown", startGame), play.on("mouseover", menuHover), play.action = startGame;
+    play.on("mousedown", startGame), play.on("touchstart", startGame), play.on("mouseover", menuHover);
+    play.action = startGame;
     play.position.x = gameWidth/GAME_SCALE/2 - play.width/2;
     play.position.y = title.position.y + gameHeight/GAME_SCALE/6;
     menu.addChild(play);
@@ -393,7 +396,8 @@ function loadMainMenu(first) {
     instruct.scale.x = 1/GAME_SCALE;
     instruct.scale.y = 1/GAME_SCALE;
     instruct.interactive = true, instruct.buttonMode = true;
-    instruct.on("mousedown", loadInstructions), instruct.on("mouseover", menuHover), instruct.action = loadInstructions;
+    instruct.on("mousedown", loadInstructions), instruct.on("touchstart", loadInstructions), instruct.on("mouseover", menuHover);
+    instruct.action = loadInstructions;
     instruct.position.x = gameWidth/GAME_SCALE/2 - instruct.width/2;
     instruct.position.y = play.position.y + gameHeight/GAME_SCALE/10;
     menu.addChild(instruct);
@@ -402,7 +406,8 @@ function loadMainMenu(first) {
     options.scale.x = 1/GAME_SCALE;
     options.scale.y = 1/GAME_SCALE;
     options.interactive = true, options.buttonMode = true;
-    options.on("mousedown", loadOptions), options.on("mouseover", menuHover), options.action = loadOptions;
+    options.on("mousedown", loadOptions), options.on("touchstart", loadOptions), options.on("mouseover", menuHover);
+    options.action = loadOptions;
     options.position.x = gameWidth/GAME_SCALE/2 - options.width/2;
     options.position.y = instruct.position.y + gameHeight/GAME_SCALE/10;
     menu.addChild(options);
@@ -411,7 +416,8 @@ function loadMainMenu(first) {
     credits.scale.x = 1/GAME_SCALE;
     credits.scale.y = 1/GAME_SCALE;
     credits.interactive = true, credits.buttonMode = true;
-    credits.on("mousedown", loadCredits), credits.on("mouseover", menuHover), credits.action = loadCredits;
+    credits.on("mousedown", loadCredits), credits.on("touchstart", loadCredits), credits.on("mouseover", menuHover);
+    credits.action = loadCredits;
     credits.position.x = gameWidth/GAME_SCALE/2 - credits.width/2;
     credits.position.y = options.position.y + gameHeight/GAME_SCALE/10;
     menu.addChild(credits);
@@ -485,7 +491,7 @@ function loadInstructions() {
     back.scale.x = 1/GAME_SCALE;
     back.scale.y = 1/GAME_SCALE;
     back.interactive = true, back.buttonMode = true;
-    back.on("mousedown", loadMainMenu), back.action = loadMainMenu;
+    back.on("mousedown", loadMainMenu), back.on("touchstart", loadMainMenu), back.action = loadMainMenu;
     back.position.x = gameWidth/GAME_SCALE - back.width - 10;
     back.position.y = gameHeight/GAME_SCALE - 3*back.height/2;
     menu.addChild(back);
@@ -525,7 +531,8 @@ function loadOptions() {
     option1.scale.x = 1/GAME_SCALE;
     option1.scale.y = 1/GAME_SCALE;
     option1.interactive = true, option1.buttonMode = true;
-    option1.on("mousedown", toggleMusic), option1.on("mouseover", menuHover), option1.action = toggleMusic;
+    option1.on("mousedown", toggleMusic), option1.on("touchstart", toggleMusic), option1.on("mouseover", menuHover);
+    option1.action = toggleMusic;
     option1.position.x = gameWidth/GAME_SCALE/2 - option1.width/2;
     option1.position.y = 20 + gameHeight/GAME_SCALE/8;
     menu.addChild(option1);
@@ -534,7 +541,8 @@ function loadOptions() {
     option2.scale.x = 1/GAME_SCALE;
     option2.scale.y = 1/GAME_SCALE;
     option2.interactive = true, option2.buttonMode = true;
-    option2.on("mousedown", toggleSFX), option2.on("mouseover", menuHover), option2.action = toggleSFX;
+    option2.on("mousedown", toggleSFX), option2.on("touchstart", toggleSFX), option2.on("mouseover", menuHover);
+    option2.action = toggleSFX;
     option2.position.x = gameWidth/GAME_SCALE/2 - option2.width/2;
     option2.position.y = option1.position.y + gameHeight/GAME_SCALE/8;
     menu.addChild(option2);
@@ -543,7 +551,8 @@ function loadOptions() {
     back.scale.x = 1/GAME_SCALE;
     back.scale.y = 1/GAME_SCALE;
     back.interactive = true, back.buttonMode = true;
-    back.on("mousedown", loadMainMenu), back.on("mouseover", menuHover), back.action = loadMainMenu;
+    back.on("mousedown", loadMainMenu), back.on("touchstart", loadMainMenu), back.on("mouseover", menuHover);
+    back.action = loadMainMenu;
     back.position.x = gameWidth/GAME_SCALE - back.width - 10;
     back.position.y = gameHeight/GAME_SCALE - 3*back.height/2;
     menu.addChild(back);
@@ -589,7 +598,7 @@ function loadCredits() {
     back.scale.x = 1/GAME_SCALE;
     back.scale.y = 1/GAME_SCALE;
     back.interactive = true, back.buttonMode = true;
-    back.on("mousedown", loadMainMenu), back.action = loadMainMenu;
+    back.on("mousedown", loadMainMenu), back.on("touchstart", loadMainMenu), back.action = loadMainMenu;
     back.position.x = gameWidth/GAME_SCALE - back.width - 10;
     back.position.y = gameHeight/GAME_SCALE - 3*back.height/2;
     menu.addChild(back);
@@ -656,7 +665,7 @@ function startGame() {
     // Initialize player sprite
     player.sprite = new PIXI.extras.MovieClip(textures.player.idle);
     player.sprite.anchor.y = 1;
-    player.sprite.position.x = 10;
+    player.sprite.position.x = PLAYER_X_OFFSET;
     player.sprite.position.y = 3*gameHeight/GAME_SCALE/4;
     player.sprite.play();
     stage.addChild(player.sprite);
@@ -711,7 +720,7 @@ function updateText() {
 
     text.text = currText;
     text.position.x = (gameWidth/GAME_SCALE-text.width)/2;
-    text.position.y = 40;
+    text.position.y = GAME_TEXT_Y_OFFSET;
 }
 function updateBackgrounds() {
     sb = backgrounds.getChildAt(0);
@@ -793,7 +802,7 @@ function gameOver() {
     player.dy = 0;
     gameTick = 0;
 
-    finalScore = Math.round((5*punchOuts+3*distance)/2);
+    finalScore = Math.floor(distance) + punchOuts * 10;
 
     player.sprite.textures = textures.player.defeat;
     for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].stop();
