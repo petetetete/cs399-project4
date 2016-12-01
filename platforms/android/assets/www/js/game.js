@@ -1,17 +1,36 @@
 // Some constant values that can and have been adjusted
-var GAME_WIDTH = window.screen.width * window.devicePixelRatio;
-var GAME_HEIGHT = window.screen.height * window.devicePixelRatio;
-var GAME_SCALE = 3;
-var GRAVITY = .2;
-var DISTANCE_DIVISOR = 20;
-var RUNNING_THRESHOLD = 2;
-var COUNTDOWN_GAP = 60;
-var ATTACK_TIME = 40;
-var GAME_OVER_DELAY = 100;
-var MUSIC_VOLUME = .1;
-var SFX_VOLUME = .3;
-var SPAWN_RATE_INCREASE = 0.06;
-var GROUND_LEVEL = 3*GAME_HEIGHT/GAME_SCALE/4;
+const GAME_SCALE = 3;
+const GRAVITY = .2;
+const DISTANCE_DIVISOR = 20;
+const RUNNING_THRESHOLD = 2;
+const COUNTDOWN_GAP = 60;
+const GAME_TEXT_Y_OFFSET = 35;
+const PLAYER_X_OFFSET = 5;
+const ATTACK_TIME = 40;
+const PUNCH_BEGIN_DELAY = 0; // Percentage of beginning punch delay
+const PUNCH_END_DELAY = .33; // Percentage of end punch delay
+const GAME_OVER_DELAY = 100;
+const MUSIC_VOLUME = .1;
+const SFX_VOLUME = .3;
+const SPAWN_RATE_INCREASE = 0.06;
+const ENABLE_POINTER = false;
+
+const SWIPE_DELAY = 200;
+const SWIPE_THRESHOLD = 130;
+const TAP_DELAY = 300;
+const TAP_THRESHOLD = 50;
+
+// Get game dimensions based off window
+var gameWidth = window.innerWidth;
+var gameHeight = window.innerHeight;
+var groundLevel = 3*gameHeight/GAME_SCALE/4;
+
+// Text sizes
+var mainTitleSize = 46;
+var largeLabelSize = 38;
+var menuTextSize = 26;
+var gameStatsSize = 22;
+var gameInfoSize = 26;
 
 // Variables used for displaying and updating text
 var currText = "";
@@ -24,7 +43,7 @@ var sounds = {};
 var keys = {};
 
 // Variables that holds all of the potential game over screen texts and starting names
-var goTexts = ["Whelp, they got'cha", "Maybe try running next time...", "C'mon smalls, you can do better than that", "RIP"];
+var goTexts = ["Whelp, got'cha", "Maybe try running...", "C'mon smalls", "RIP"];
 var startNames = ["Nameless Nancy", "NoName McGee", "Tike Myson", "Boxer 76"];
 
 // Booleans used to indicate the various states the game could be in
@@ -48,6 +67,13 @@ var finalScore = 0;
 var gameTick = 0;
 var currSong = Math.round(Math.random()*3)-1;
 var spawnGap = 300;
+
+// Touch info
+var touchInfo = {
+    startX: null,
+    startY: null,
+    startTime: null
+};
 
 // Variables having to do with the state machines in use
 var currState = 0;
@@ -92,7 +118,7 @@ var optMenuState = StateMachine.create({
 
 // Fetch gameport and add the renderer
 var gameport = document.getElementById("gameport");
-var renderer = new PIXI.autoDetectRenderer(GAME_WIDTH, GAME_HEIGHT, {backgroundColor: 0x000});
+var renderer = new PIXI.autoDetectRenderer(gameWidth, gameHeight, {backgroundColor: 0x000});
 gameport.appendChild(renderer.view);
 
 // Create the main stage
@@ -109,36 +135,33 @@ var player = {
     "attackTime": 0,
     "punching": false,
     "isAttacking": function() {
-        return this.attackTime > 0
+        return this.attackTime > 0;
     },
     "inAir": function() {
-        if (this.sprite.position.y < GROUND_LEVEL) return true;
+        if (this.sprite.position.y < groundLevel) return true;
         else return false;
     },
     "update": function() {
 
         // Update physics of player
         this.sprite.position.y += this.dy;
-        if (this.sprite.position.y > GROUND_LEVEL) this.sprite.position.y = GROUND_LEVEL;
+        if (this.sprite.position.y > groundLevel) this.sprite.position.y = groundLevel;
         this.dy += GRAVITY;
 
         // Update attack of player
         if (this.isAttacking()) {
             --this.attackTime;
             this.sprite.animationSpeed = 6/ATTACK_TIME;
-            if (this.attackTime > ATTACK_TIME/3 && this.attackTime < 2*ATTACK_TIME/3) this.punching = true;
+            if (this.attackTime < ATTACK_TIME - PUNCH_BEGIN_DELAY * ATTACK_TIME && this.attackTime > ATTACK_TIME * PUNCH_END_DELAY) this.punching = true;
             else this.punching = false;
         }
         else {
             this.sprite.animationSpeed = this.dx/15 + .05;
         }
         
-
         // Idle animation
         if (this.dx === 0) {
             this.sprite.textures = textures.player.idle;
-            // Different texture if jumping and still
-            // if (this.inAir()) this.sprite.textures = textures.player.stillJump;
         }
         // Walking animation
         else if (this.dx > 0 && this.dx < RUNNING_THRESHOLD) {
@@ -166,22 +189,22 @@ var enemies = {
             "dx": 0,
             "dy": 0,
             "jumpPower": 0,
-            "startX": GAME_WIDTH/GAME_SCALE,
-            "startY": GROUND_LEVEL
+            "startX": gameWidth/GAME_SCALE,
+            "startY": groundLevel
         },
         "enemy2": {
             "dx": 0.3,
             "dy": 0,
             "jumpPower": 2.75,
-            "startX": GAME_WIDTH/GAME_SCALE,
-            "startY": GROUND_LEVEL
+            "startX": gameWidth/GAME_SCALE,
+            "startY": groundLevel
         },
         "enemy3": {
             "dx": -0.2,
             "dy": 0,
             "jumpPower": 0,
-            "startX": GAME_WIDTH/GAME_SCALE,
-            "startY": GROUND_LEVEL
+            "startX": gameWidth/GAME_SCALE,
+            "startY": groundLevel
         }
     },
     "update": function() {
@@ -195,11 +218,11 @@ var enemies = {
             // Adjust position of sprite accounting for world physics
             currSprite.position.x -= player.dx - currSprite.dx;
             currSprite.position.y += currSprite.dy;
-            if (currSprite.position.y > GROUND_LEVEL) currSprite.position.y = GROUND_LEVEL, currSprite.dy = -currStats.jumpPower;
+            if (currSprite.position.y > groundLevel) currSprite.position.y = groundLevel, currSprite.dy = -currStats.jumpPower;
             currSprite.dy += GRAVITY;
 
             // Check to see if this enemy is inside of the punch hitbox while the player is punching
-            if (((Math.abs(currSprite.position.x - player.sprite.position.x-player.sprite.width) * 2 < currSprite.width + 3*player.sprite.width/4) && (Math.abs(currSprite.position.y - player.sprite.position.y) * 2 < currSprite.height + player.sprite.height)) && player.punching) {
+            if (player.punching && ((Math.abs(currSprite.position.x - player.sprite.position.x-player.sprite.width) * 2 < currSprite.width + 3*player.sprite.width/4) && (Math.abs(currSprite.position.y - player.sprite.position.y) * 2 < currSprite.height + player.sprite.height))) {
                 playSound("punch");
                 ++punchOuts;
                 this.sprites.splice(this.sprites.indexOf(currSprite), 1);
@@ -207,7 +230,7 @@ var enemies = {
             }
 
             // Check to see if this enemy has collided with the player
-            if (((Math.abs(currSprite.position.x - player.sprite.position.x) * 2 < currSprite.width + player.sprite.width) && (Math.abs(currSprite.position.y - player.sprite.position.y) * 2 < currSprite.height + player.sprite.height)) && running) gameOver();
+            if (running && ((Math.abs(currSprite.position.x - player.sprite.position.x) * 2 < currSprite.width + player.sprite.width) && (Math.abs(currSprite.position.y - player.sprite.position.y) * 2 < currSprite.height + player.sprite.height))) gameOver();
 
             // Update textures
             currSprite.animationSpeed = currStats.dx/20 + .05;
@@ -220,11 +243,13 @@ var enemies = {
 // Add event listeners to the document
 document.addEventListener("keydown", keydownEventHandler);
 document.addEventListener("keyup", keyupEventHandler);
+document.addEventListener("touchstart", touchstartEventHandler);
+document.addEventListener("touchend", touchendEventHandler);
 
 // Create temporary loading text
-ltext = new PIXI.Text("Loading ... edit high score name while you wait?",{font: "30px Arial", fill: "#fff"});
-ltext.position.x = 10;
-ltext.position.y = GAME_HEIGHT/GAME_SCALE-20;
+ltext = new PIXI.Text("Loading...",{font: "30px Arial", fill: "#fff"});
+ltext.position.x = 5;
+ltext.position.y = gameHeight/GAME_SCALE-15;
 ltext.scale.x = 1/GAME_SCALE;
 ltext.scale.y = 1/GAME_SCALE;
 stage.addChildAt(ltext, 0);
@@ -236,7 +261,7 @@ PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.NEAREST;
 
 // Add all assets to the loader
 PIXI.loader
-    .add("assets/spritesheet.json")
+    .add("assets/test.json")
     .add("fonts/athletic-stroke.fnt")
     .add("fonts/athletic-stroke-small.fnt")
     .add("audio/music1.mp3")
@@ -361,51 +386,55 @@ function loadMainMenu(first) {
     // Create main menu
     menu = new PIXI.Container();
     background = new PIXI.Sprite(textures.mainMenu);
-    background.width = GAME_WIDTH/GAME_SCALE;
-    background.height = GAME_HEIGHT/GAME_SCALE;
+    background.width = gameWidth/GAME_SCALE;
+    background.height = gameHeight/GAME_SCALE;
     menu.addChild(background);
 
-    title = new PIXI.extras.BitmapText("Punch Line",{font: "58px athletic-stroke", align: "center"});
+    title = new PIXI.extras.BitmapText("Punch Line",{font: `${mainTitleSize}px athletic-stroke`, align: "center"});
     title.scale.x = 1/GAME_SCALE;
     title.scale.y = 1/GAME_SCALE;
-    title.position.x = GAME_WIDTH/GAME_SCALE/2 - title.width/2;
-    title.position.y = GAME_HEIGHT/GAME_SCALE/4 - title.height/2;
+    title.position.x = gameWidth/GAME_SCALE/2 - title.width/2;
+    title.position.y = gameHeight/GAME_SCALE/4 - title.height/2;
     menu.addChild(title);
 
-    play = new PIXI.extras.BitmapText("Play Game",{font: "36px athletic-stroke-small", align: "center"});
+    play = new PIXI.extras.BitmapText("Play Game",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     play.scale.x = 1/GAME_SCALE;
     play.scale.y = 1/GAME_SCALE;
     play.interactive = true, play.buttonMode = true;
-    play.on("mousedown", startGame), play.on("mouseover", menuHover), play.action = startGame;
-    play.position.x = GAME_WIDTH/GAME_SCALE/2 - play.width/2;
-    play.position.y = title.position.y + GAME_HEIGHT/GAME_SCALE/6;
+    play.on("mousedown", startGame), play.on("touchstart", startGame), play.on("mouseover", menuHover);
+    play.action = startGame;
+    play.position.x = gameWidth/GAME_SCALE/2 - play.width/2;
+    play.position.y = title.position.y + gameHeight/GAME_SCALE/6;
     menu.addChild(play);
 
-    instruct = new PIXI.extras.BitmapText("Instructions",{font: "36px athletic-stroke-small", align: "center"});
+    instruct = new PIXI.extras.BitmapText("Instructions",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     instruct.scale.x = 1/GAME_SCALE;
     instruct.scale.y = 1/GAME_SCALE;
     instruct.interactive = true, instruct.buttonMode = true;
-    instruct.on("mousedown", loadInstructions), instruct.on("mouseover", menuHover), instruct.action = loadInstructions;
-    instruct.position.x = GAME_WIDTH/GAME_SCALE/2 - instruct.width/2;
-    instruct.position.y = play.position.y + GAME_HEIGHT/GAME_SCALE/10;
+    instruct.on("mousedown", loadInstructions), instruct.on("touchstart", loadInstructions), instruct.on("mouseover", menuHover);
+    instruct.action = loadInstructions;
+    instruct.position.x = gameWidth/GAME_SCALE/2 - instruct.width/2;
+    instruct.position.y = play.position.y + gameHeight/GAME_SCALE/10;
     menu.addChild(instruct);
 
-    options = new PIXI.extras.BitmapText("Options",{font: "36px athletic-stroke-small", align: "center"});
+    options = new PIXI.extras.BitmapText("Options",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     options.scale.x = 1/GAME_SCALE;
     options.scale.y = 1/GAME_SCALE;
     options.interactive = true, options.buttonMode = true;
-    options.on("mousedown", loadOptions), options.on("mouseover", menuHover), options.action = loadOptions;
-    options.position.x = GAME_WIDTH/GAME_SCALE/2 - options.width/2;
-    options.position.y = instruct.position.y + GAME_HEIGHT/GAME_SCALE/10;
+    options.on("mousedown", loadOptions), options.on("touchstart", loadOptions), options.on("mouseover", menuHover);
+    options.action = loadOptions;
+    options.position.x = gameWidth/GAME_SCALE/2 - options.width/2;
+    options.position.y = instruct.position.y + gameHeight/GAME_SCALE/10;
     menu.addChild(options);
 
-    credits = new PIXI.extras.BitmapText("Credits",{font: "36px athletic-stroke-small", align: "center"});
+    credits = new PIXI.extras.BitmapText("Credits",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     credits.scale.x = 1/GAME_SCALE;
     credits.scale.y = 1/GAME_SCALE;
     credits.interactive = true, credits.buttonMode = true;
-    credits.on("mousedown", loadCredits), credits.on("mouseover", menuHover), credits.action = loadCredits;
-    credits.position.x = GAME_WIDTH/GAME_SCALE/2 - credits.width/2;
-    credits.position.y = options.position.y + GAME_HEIGHT/GAME_SCALE/10;
+    credits.on("mousedown", loadCredits), credits.on("touchstart", loadCredits), credits.on("mouseover", menuHover);
+    credits.action = loadCredits;
+    credits.position.x = gameWidth/GAME_SCALE/2 - credits.width/2;
+    credits.position.y = options.position.y + gameHeight/GAME_SCALE/10;
     menu.addChild(credits);
 
     pointer = new PIXI.Sprite(textures.pointer);
@@ -455,31 +484,32 @@ function loadInstructions() {
     // Create instructions menu
     menu = new PIXI.Container();
     background = new PIXI.Sprite(textures.mainMenu);
-    background.width = GAME_WIDTH/GAME_SCALE;
-    background.height = GAME_HEIGHT/GAME_SCALE;
+    background.width = gameWidth/GAME_SCALE;
+    background.height = gameHeight/GAME_SCALE;
     menu.addChild(background);
 
-    title = new PIXI.extras.BitmapText("Instructions",{font: "58px athletic-stroke", align: "center"});
+    title = new PIXI.extras.BitmapText("Instructions",{font: `${largeLabelSize}px athletic-stroke`, align: "center"});
     title.scale.x = 1/GAME_SCALE;
     title.scale.y = 1/GAME_SCALE;
+    // title.position.x = gameWidth/GAME_SCALE/2 - options.width/2;
     title.position.x = 10;
     title.position.y = 10;
     menu.addChild(title);
 
-    infoText = new PIXI.extras.BitmapText("Press 'space', 'w', or 'up arrow' to jump\n\nPress 'esc' to pause the game\n\nPress 'enter' to punch baddies in front of you\n\nTiming on your punch is critical, you can't\njust throw a perfect punch while running\nfull-speed you silly goose",{font: "36px athletic-stroke-small", align: "center"});
+    infoText = new PIXI.extras.BitmapText("Swipe up to jump\n\nSwipe right to pause\n\nTap to punch baddies\n\nPunch timing is\ncritical,the tail end\nof your punch won't\nbe enough force",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     infoText.scale.x = 1/GAME_SCALE;
     infoText.scale.y = 1/GAME_SCALE;
-    infoText.position.x = GAME_WIDTH/GAME_SCALE/2 - infoText.width/2;
-    infoText.position.y = 20 + GAME_HEIGHT/GAME_SCALE/8;
+    infoText.position.x = gameWidth/GAME_SCALE/2 - infoText.width/2;
+    infoText.position.y = 20 + gameHeight/GAME_SCALE/8;
     menu.addChild(infoText);
 
-    back = new PIXI.extras.BitmapText("Back",{font: "36px athletic-stroke-small", align: "center"});
+    back = new PIXI.extras.BitmapText("Back",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     back.scale.x = 1/GAME_SCALE;
     back.scale.y = 1/GAME_SCALE;
     back.interactive = true, back.buttonMode = true;
-    back.on("mousedown", loadMainMenu), back.action = loadMainMenu;
-    back.position.x = GAME_WIDTH/GAME_SCALE - back.width - 10;
-    back.position.y = GAME_HEIGHT/GAME_SCALE - 3*back.height/2;
+    back.on("mousedown", loadMainMenu), back.on("touchstart", loadMainMenu), back.action = loadMainMenu;
+    back.position.x = gameWidth/GAME_SCALE - back.width - 10;
+    back.position.y = gameHeight/GAME_SCALE - 3*back.height/2;
     menu.addChild(back);
 
     pointer = new PIXI.Sprite(textures.pointer);
@@ -502,42 +532,45 @@ function loadOptions() {
     // Create options menu
     menu = new PIXI.Container();
     background = new PIXI.Sprite(textures.mainMenu);
-    background.width = GAME_WIDTH/GAME_SCALE;
-    background.height = GAME_HEIGHT/GAME_SCALE;
+    background.width = gameWidth/GAME_SCALE;
+    background.height = gameHeight/GAME_SCALE;
     menu.addChild(background);
 
-    title = new PIXI.extras.BitmapText("Options",{font: "58px athletic-stroke", align: "center"});
+    title = new PIXI.extras.BitmapText("Options",{font: `${largeLabelSize}px athletic-stroke`, align: "center"});
     title.scale.x = 1/GAME_SCALE;
     title.scale.y = 1/GAME_SCALE;
     title.position.x = 10;
     title.position.y = 10;
     menu.addChild(title);
 
-    option1 = new PIXI.extras.BitmapText((musicEnabled) ? "Music: On" : "Music: Off",{font: "36px athletic-stroke-small", align: "center"});
+    option1 = new PIXI.extras.BitmapText((musicEnabled) ? "Music: On" : "Music: Off",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     option1.scale.x = 1/GAME_SCALE;
     option1.scale.y = 1/GAME_SCALE;
     option1.interactive = true, option1.buttonMode = true;
-    option1.on("mousedown", toggleMusic), option1.on("mouseover", menuHover), option1.action = toggleMusic;
-    option1.position.x = GAME_WIDTH/GAME_SCALE/2 - option1.width/2;
-    option1.position.y = 20 + GAME_HEIGHT/GAME_SCALE/8;
+    option1.on("mousedown", toggleMusic), option1.on("touchstart", toggleMusic), option1.on("mouseover", menuHover);
+    option1.action = toggleMusic;
+    option1.position.x = gameWidth/GAME_SCALE/2 - option1.width/2;
+    option1.position.y = 20 + gameHeight/GAME_SCALE/8;
     menu.addChild(option1);
 
-    option2 = new PIXI.extras.BitmapText((sfxEnabled) ? "SFX: On" : "SFX: Off",{font: "36px athletic-stroke-small", align: "center"});
+    option2 = new PIXI.extras.BitmapText((sfxEnabled) ? "SFX: On" : "SFX: Off",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     option2.scale.x = 1/GAME_SCALE;
     option2.scale.y = 1/GAME_SCALE;
     option2.interactive = true, option2.buttonMode = true;
-    option2.on("mousedown", toggleSFX), option2.on("mouseover", menuHover), option2.action = toggleSFX;
-    option2.position.x = GAME_WIDTH/GAME_SCALE/2 - option2.width/2;
-    option2.position.y = option1.position.y + GAME_HEIGHT/GAME_SCALE/8;
+    option2.on("mousedown", toggleSFX), option2.on("touchstart", toggleSFX), option2.on("mouseover", menuHover);
+    option2.action = toggleSFX;
+    option2.position.x = gameWidth/GAME_SCALE/2 - option2.width/2;
+    option2.position.y = option1.position.y + gameHeight/GAME_SCALE/8;
     menu.addChild(option2);
 
-    back = new PIXI.extras.BitmapText("Back",{font: "36px athletic-stroke-small", align: "center"});
+    back = new PIXI.extras.BitmapText("Back",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     back.scale.x = 1/GAME_SCALE;
     back.scale.y = 1/GAME_SCALE;
     back.interactive = true, back.buttonMode = true;
-    back.on("mousedown", loadMainMenu), back.on("mouseover", menuHover), back.action = loadMainMenu;
-    back.position.x = GAME_WIDTH/GAME_SCALE - back.width - 10;
-    back.position.y = GAME_HEIGHT/GAME_SCALE - 3*back.height/2;
+    back.on("mousedown", loadMainMenu), back.on("touchstart", loadMainMenu), back.on("mouseover", menuHover);
+    back.action = loadMainMenu;
+    back.position.x = gameWidth/GAME_SCALE - back.width - 10;
+    back.position.y = gameHeight/GAME_SCALE - 3*back.height/2;
     menu.addChild(back);
 
     pointer = new PIXI.Sprite(textures.pointer);
@@ -559,31 +592,31 @@ function loadCredits() {
     // Create credits menu
     menu = new PIXI.Container();
     background = new PIXI.Sprite(textures.mainMenu);
-    background.width = GAME_WIDTH/GAME_SCALE;
-    background.height = GAME_HEIGHT/GAME_SCALE;
+    background.width = gameWidth/GAME_SCALE;
+    background.height = gameHeight/GAME_SCALE;
     menu.addChild(background);
 
-    title = new PIXI.extras.BitmapText("Credits:",{font: "58px athletic-stroke", align: "center"});
+    title = new PIXI.extras.BitmapText("Credits:",{font: `${largeLabelSize}px athletic-stroke`, align: "center"});
     title.scale.x = 1/GAME_SCALE;
     title.scale.y = 1/GAME_SCALE;
     title.position.x = 10;
     title.position.y = 10;
     menu.addChild(title);
 
-    infoText = new PIXI.extras.BitmapText("Design and Storyboarding: Peter Huettl\n\nMusic and Sound: Peter Huettl\n\nProgramming: Peter Huettl\n\nArt: Peter Huettl",{font: "36px athletic-stroke-small", align: "center"});
+    infoText = new PIXI.extras.BitmapText("Design and Storyboarding: Peter Huettl\n\nMusic and Sound: Peter Huettl\n\nProgramming: Peter Huettl\n\nArt: Peter Huettl",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     infoText.scale.x = 1/GAME_SCALE;
     infoText.scale.y = 1/GAME_SCALE;
-    infoText.position.x = GAME_WIDTH/GAME_SCALE/2 - infoText.width/2;
-    infoText.position.y = 20 + GAME_HEIGHT/GAME_SCALE/8;
+    infoText.position.x = gameWidth/GAME_SCALE/2 - infoText.width/2;
+    infoText.position.y = 20 + gameHeight/GAME_SCALE/8;
     menu.addChild(infoText);
 
-    back = new PIXI.extras.BitmapText("Back",{font: "36px athletic-stroke-small", align: "center"});
+    back = new PIXI.extras.BitmapText("Back",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     back.scale.x = 1/GAME_SCALE;
     back.scale.y = 1/GAME_SCALE;
     back.interactive = true, back.buttonMode = true;
-    back.on("mousedown", loadMainMenu), back.action = loadMainMenu;
-    back.position.x = GAME_WIDTH/GAME_SCALE - back.width - 10;
-    back.position.y = GAME_HEIGHT/GAME_SCALE - 3*back.height/2;
+    back.on("mousedown", loadMainMenu), back.on("touchstart", loadMainMenu), back.action = loadMainMenu;
+    back.position.x = gameWidth/GAME_SCALE - back.width - 10;
+    back.position.y = gameHeight/GAME_SCALE - 3*back.height/2;
     menu.addChild(back);
 
     pointer = new PIXI.Sprite(textures.pointer);
@@ -616,35 +649,29 @@ function startGame() {
     skyBack = new PIXI.Sprite(textures.skyBack);
     skyBack.position.x = 0;
     skyBack.position.y = 0;
-    skyBack.width = 2*GAME_WIDTH/GAME_SCALE;
-    skyBack.height = 3*GAME_HEIGHT/GAME_SCALE/4;
+    skyBack.width = 2*gameWidth/GAME_SCALE;
+    skyBack.height = 3*gameHeight/GAME_SCALE/4;
     backgrounds.addChild(skyBack);
 
     distantBack = new PIXI.Sprite(textures.distantBack);
     distantBack.position.x = 0;
     distantBack.position.y = 0;
-    distantBack.width = 2*GAME_WIDTH/GAME_SCALE;
-    distantBack.height = 3*GAME_HEIGHT/GAME_SCALE/4;
+    distantBack.width = 2*gameWidth/GAME_SCALE;
+    distantBack.height = 3*gameHeight/GAME_SCALE/4;
     backgrounds.addChild(distantBack);
-
-    console.log(distantBack.height);
-    console.log(textures.distantBack.height);
 
     closeBack = new PIXI.Sprite(textures.closeBack);
     closeBack.position.x = 0;
-    closeBack.position.y = 3*GAME_HEIGHT/GAME_SCALE/8;
-    closeBack.width = 2*GAME_WIDTH/GAME_SCALE;
-    closeBack.height = 3*GAME_HEIGHT/GAME_SCALE/8;
+    closeBack.position.y = 3*gameHeight/GAME_SCALE/8;
+    closeBack.width = 2*gameWidth/GAME_SCALE;
+    closeBack.height = 3*gameHeight/GAME_SCALE/8;
     backgrounds.addChild(closeBack);
-
-    console.log(closeBack.height);
-    console.log(textures.closeBack.height);
 
     floor = new PIXI.Sprite(textures.ground);
     floor.position.x = 0;
-    floor.position.y = 3*GAME_HEIGHT/GAME_SCALE/4;
-    floor.width = 2*GAME_WIDTH/GAME_SCALE;
-    floor.height = GAME_HEIGHT/GAME_SCALE/4;
+    floor.position.y = 3*gameHeight/GAME_SCALE/4;
+    floor.width = 2*gameWidth/GAME_SCALE;
+    floor.height = gameHeight/GAME_SCALE/4;
     backgrounds.addChild(floor);
     stage.addChild(backgrounds);
 
@@ -654,34 +681,34 @@ function startGame() {
     // Initialize player sprite
     player.sprite = new PIXI.extras.MovieClip(textures.player.idle);
     player.sprite.anchor.y = 1;
-    player.sprite.position.x = 20;
-    player.sprite.position.y = 3*GAME_HEIGHT/GAME_SCALE/4;
+    player.sprite.position.x = PLAYER_X_OFFSET;
+    player.sprite.position.y = 3*gameHeight/GAME_SCALE/4;
     player.sprite.play();
     stage.addChild(player.sprite);
 
-    distanceText = new PIXI.extras.BitmapText("Distance: 0 ft",{font: "28px athletic-stroke-small", align: "left"});
+    distanceText = new PIXI.extras.BitmapText("Distance: 0 ft",{font: `${gameStatsSize}px athletic-stroke-small`, align: "left"});
     distanceText.scale.x = 1/GAME_SCALE;
     distanceText.scale.y = 1/GAME_SCALE;
     distanceText.position.x = 5;
     distanceText.position.y = 5;
     stage.addChild(distanceText);
 
-    punchText = new PIXI.extras.BitmapText("Punch-outs: 0",{font: "28px athletic-stroke-small", align: "left"});
+    punchText = new PIXI.extras.BitmapText("Punch-outs: 0",{font: `${gameStatsSize}px athletic-stroke-small`, align: "left"});
     punchText.scale.x = 1/GAME_SCALE;
     punchText.scale.y = 1/GAME_SCALE;
     punchText.position.x = 5;
     punchText.position.y = 17;
     stage.addChild(punchText);
 
-    pausedText = new PIXI.extras.BitmapText("Paused",{font: "36px athletic-stroke-small", align: "left"});
+    pausedText = new PIXI.extras.BitmapText("Paused",{font: `${gameStatsSize}px athletic-stroke-small`, align: "left"});
     pausedText.scale.x = 1/GAME_SCALE;
     pausedText.scale.y = 1/GAME_SCALE;
-    pausedText.position.x = GAME_WIDTH/GAME_SCALE - 47;
-    pausedText.position.y = GAME_HEIGHT/GAME_SCALE - 15;
+    pausedText.position.x = gameWidth/GAME_SCALE - 35;
+    pausedText.position.y = gameHeight/GAME_SCALE - 15;
     pausedText.visible = false;
     stage.addChild(pausedText);
 
-    text = new PIXI.extras.BitmapText("",{font: "36px athletic-stroke-small", align: "center"});
+    text = new PIXI.extras.BitmapText("",{font: `${gameInfoSize}px athletic-stroke-small`, align: "center"});
     text.scale.x = 1/GAME_SCALE;
     text.scale.y = 1/GAME_SCALE;
     text.alpha = 0;
@@ -708,8 +735,8 @@ function updateText() {
     }
 
     text.text = currText;
-    text.position.x = (GAME_WIDTH/GAME_SCALE-text.width)/2;
-    text.position.y = 20;
+    text.position.x = (gameWidth/GAME_SCALE-text.width)/2;
+    text.position.y = GAME_TEXT_Y_OFFSET;
 }
 function updateBackgrounds() {
     sb = backgrounds.getChildAt(0);
@@ -741,7 +768,7 @@ function updateGameState() {
 function updateGameOver() {
     if (++currDelay === GAME_OVER_DELAY) {
         restartable = true;
-        currText += "\n\n\nPress space or enter to play again\n\nPress escape to return to the main menu";
+        currText += "\n\nTap to play again\n\nSwipe right to exit";
     }
 }
 function updateMusic() {
@@ -791,12 +818,12 @@ function gameOver() {
     player.dy = 0;
     gameTick = 0;
 
-    finalScore = Math.round((5*punchOuts+3*distance)/2);
+    finalScore = Math.floor(distance) + punchOuts * 10;
 
     player.sprite.textures = textures.player.defeat;
     for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].stop();
-    displayText("\n\n" + goTexts[Math.floor(Math.random()*goTexts.length)] + "\n\nYour final score, '" + finalScore + "', has been submitted", 0);
-    postScore();
+
+    displayText(`\n\n${goTexts[Math.floor(Math.random()*goTexts.length)]}\n\nFinal score: ${finalScore}`, 0);
 }
 function clearStage() {
     while(stage.children[0]) {
@@ -883,7 +910,7 @@ function keydownEventHandler(e) {
                 for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].stop();
             }
         }
-        if ((e.which === 13 || e.which === 32) && restartable) startGame();
+        if (e.which === 13 && restartable) startGame();
         if ((e.which === 27 || e.which === 8) && restartable) loadMainMenu();
     }
     
@@ -901,6 +928,55 @@ function focusEventHandler(e) {
 }
 function blurEventHandler(e) {
     focusedGame = true;
+}
+function touchstartEventHandler(e) {
+    if (!inMenu) {
+        let touch = e.changedTouches[0];
+        touchInfo.startX = touch.pageX;
+        touchInfo.startY = touch.pageY;
+        touchInfo.startTime = new Date().getTime();
+    }
+}
+function touchendEventHandler(e) {
+    if (!inMenu) {
+        let touch = e.changedTouches[0];
+        let distY = touch.pageY - touchInfo.startY;
+        let distX = touch.pageX - touchInfo.startX;
+        let time = new Date().getTime() - touchInfo.startTime;
+
+        // Swipe up conditional
+        if (time <= SWIPE_DELAY && distY + SWIPE_THRESHOLD <= 0) {
+            if (!player.inAir()) {
+                playSound("jump");
+                player.dy = -player.jumpPower;
+            }
+        }
+        // Swipe right conditional
+        else if (time <= SWIPE_DELAY && distX - TAP_THRESHOLD >= 0) {
+            if (running) {
+                playing = !playing;
+                if (playing) {
+                    pausedText.visible = false;
+                    player.sprite.play();
+                    for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].play();
+                }
+                else {
+                    pausedText.visible = true;
+                    player.sprite.stop();
+                    for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].stop();
+                }
+            }
+            else if (restartable) loadMainMenu();
+        }
+        // Ttap conditional
+        else if (time <= TAP_DELAY && Math.abs(distX) <= TAP_THRESHOLD && Math.abs(distY) <= TAP_THRESHOLD) {
+            if (!player.isAttacking() && running) {
+                playSound("woosh");
+                player.attackTime = ATTACK_TIME;
+            }
+            else if (restartable) startGame();
+        }
+    }
 }
 /* END event handler functions */
 

@@ -13,6 +13,12 @@ const GAME_OVER_DELAY = 100;
 const MUSIC_VOLUME = .1;
 const SFX_VOLUME = .3;
 const SPAWN_RATE_INCREASE = 0.06;
+const ENABLE_POINTER = false;
+
+const SWIPE_DELAY = 200;
+const SWIPE_THRESHOLD = 130;
+const TAP_DELAY = 300;
+const TAP_THRESHOLD = 50;
 
 // Get game dimensions based off window
 var gameWidth = window.innerWidth;
@@ -61,6 +67,13 @@ var finalScore = 0;
 var gameTick = 0;
 var currSong = Math.round(Math.random()*3)-1;
 var spawnGap = 300;
+
+// Touch info
+var touchInfo = {
+    startX: null,
+    startY: null,
+    startTime: null
+};
 
 // Variables having to do with the state machines in use
 var currState = 0;
@@ -230,6 +243,8 @@ var enemies = {
 // Add event listeners to the document
 document.addEventListener("keydown", keydownEventHandler);
 document.addEventListener("keyup", keyupEventHandler);
+document.addEventListener("touchstart", touchstartEventHandler);
+document.addEventListener("touchend", touchendEventHandler);
 
 // Create temporary loading text
 ltext = new PIXI.Text("Loading...",{font: "30px Arial", fill: "#fff"});
@@ -476,11 +491,12 @@ function loadInstructions() {
     title = new PIXI.extras.BitmapText("Instructions",{font: `${largeLabelSize}px athletic-stroke`, align: "center"});
     title.scale.x = 1/GAME_SCALE;
     title.scale.y = 1/GAME_SCALE;
+    // title.position.x = gameWidth/GAME_SCALE/2 - options.width/2;
     title.position.x = 10;
     title.position.y = 10;
     menu.addChild(title);
 
-    infoText = new PIXI.extras.BitmapText("Press 'space', 'w', or 'up arrow' to jump\n\nPress 'esc' to pause the game\n\nPress 'enter' to punch baddies in front of you\n\nTiming on your punch is critical, you can't\njust throw a perfect punch while running\nfull-speed you silly goose",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    infoText = new PIXI.extras.BitmapText("Swipe up to jump\n\nSwipe right to pause\n\nTap to punch baddies\n\nPunch timing is\ncritical,the tail end\nof your punch won't\nbe enough force",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
     infoText.scale.x = 1/GAME_SCALE;
     infoText.scale.y = 1/GAME_SCALE;
     infoText.position.x = gameWidth/GAME_SCALE/2 - infoText.width/2;
@@ -752,7 +768,7 @@ function updateGameState() {
 function updateGameOver() {
     if (++currDelay === GAME_OVER_DELAY) {
         restartable = true;
-        currText += "\n\nPress ENTER \nto play again\n\nPress ESC to exit";
+        currText += "\n\nTap to play again\n\nSwipe right to exit";
     }
 }
 function updateMusic() {
@@ -912,6 +928,55 @@ function focusEventHandler(e) {
 }
 function blurEventHandler(e) {
     focusedGame = true;
+}
+function touchstartEventHandler(e) {
+    if (!inMenu) {
+        let touch = e.changedTouches[0];
+        touchInfo.startX = touch.pageX;
+        touchInfo.startY = touch.pageY;
+        touchInfo.startTime = new Date().getTime();
+    }
+}
+function touchendEventHandler(e) {
+    if (!inMenu) {
+        let touch = e.changedTouches[0];
+        let distY = touch.pageY - touchInfo.startY;
+        let distX = touch.pageX - touchInfo.startX;
+        let time = new Date().getTime() - touchInfo.startTime;
+
+        // Swipe up conditional
+        if (time <= SWIPE_DELAY && distY + SWIPE_THRESHOLD <= 0) {
+            if (!player.inAir()) {
+                playSound("jump");
+                player.dy = -player.jumpPower;
+            }
+        }
+        // Swipe right conditional
+        else if (time <= SWIPE_DELAY && distX - TAP_THRESHOLD >= 0) {
+            if (running) {
+                playing = !playing;
+                if (playing) {
+                    pausedText.visible = false;
+                    player.sprite.play();
+                    for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].play();
+                }
+                else {
+                    pausedText.visible = true;
+                    player.sprite.stop();
+                    for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].stop();
+                }
+            }
+            else if (restartable) loadMainMenu();
+        }
+        // Ttap conditional
+        else if (time <= TAP_DELAY && Math.abs(distX) <= TAP_THRESHOLD && Math.abs(distY) <= TAP_THRESHOLD) {
+            if (!player.isAttacking() && running) {
+                playSound("woosh");
+                player.attackTime = ATTACK_TIME;
+            }
+            else if (restartable) startGame();
+        }
+    }
 }
 /* END event handler functions */
 
