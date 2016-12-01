@@ -17,7 +17,7 @@
        under the License.
  */
 
-package io.cordova.hellocordova;
+package ph289.project4.cs399;
 
 import android.os.Bundle;
 import org.apache.cordova.*;
