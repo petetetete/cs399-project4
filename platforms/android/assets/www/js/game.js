@@ -390,14 +390,14 @@ function loadMainMenu(first) {
     background.height = gameHeight/GAME_SCALE;
     menu.addChild(background);
 
-    title = new PIXI.extras.BitmapText("Punch Line",{font: `${mainTitleSize}px athletic-stroke`, align: "center"});
+    title = new PIXI.extras.BitmapText("Punch Line",{font: mainTitleSize + "px athletic-stroke", align: "center"});
     title.scale.x = 1/GAME_SCALE;
     title.scale.y = 1/GAME_SCALE;
     title.position.x = gameWidth/GAME_SCALE/2 - title.width/2;
     title.position.y = gameHeight/GAME_SCALE/4 - title.height/2;
     menu.addChild(title);
 
-    play = new PIXI.extras.BitmapText("Play Game",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    play = new PIXI.extras.BitmapText("Play Game",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     play.scale.x = 1/GAME_SCALE;
     play.scale.y = 1/GAME_SCALE;
     play.interactive = true, play.buttonMode = true;
@@ -407,7 +407,7 @@ function loadMainMenu(first) {
     play.position.y = title.position.y + gameHeight/GAME_SCALE/6;
     menu.addChild(play);
 
-    instruct = new PIXI.extras.BitmapText("Instructions",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    instruct = new PIXI.extras.BitmapText("Instructions",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     instruct.scale.x = 1/GAME_SCALE;
     instruct.scale.y = 1/GAME_SCALE;
     instruct.interactive = true, instruct.buttonMode = true;
@@ -417,7 +417,7 @@ function loadMainMenu(first) {
     instruct.position.y = play.position.y + gameHeight/GAME_SCALE/10;
     menu.addChild(instruct);
 
-    options = new PIXI.extras.BitmapText("Options",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    options = new PIXI.extras.BitmapText("Options",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     options.scale.x = 1/GAME_SCALE;
     options.scale.y = 1/GAME_SCALE;
     options.interactive = true, options.buttonMode = true;
@@ -427,7 +427,7 @@ function loadMainMenu(first) {
     options.position.y = instruct.position.y + gameHeight/GAME_SCALE/10;
     menu.addChild(options);
 
-    credits = new PIXI.extras.BitmapText("Credits",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    credits = new PIXI.extras.BitmapText("Credits",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     credits.scale.x = 1/GAME_SCALE;
     credits.scale.y = 1/GAME_SCALE;
     credits.interactive = true, credits.buttonMode = true;
@@ -488,7 +488,7 @@ function loadInstructions() {
     background.height = gameHeight/GAME_SCALE;
     menu.addChild(background);
 
-    title = new PIXI.extras.BitmapText("Instructions",{font: `${largeLabelSize}px athletic-stroke`, align: "center"});
+    title = new PIXI.extras.BitmapText("Instructions",{font: largeLabelSize + "px athletic-stroke", align: "center"});
     title.scale.x = 1/GAME_SCALE;
     title.scale.y = 1/GAME_SCALE;
     // title.position.x = gameWidth/GAME_SCALE/2 - options.width/2;
@@ -496,14 +496,14 @@ function loadInstructions() {
     title.position.y = 10;
     menu.addChild(title);
 
-    infoText = new PIXI.extras.BitmapText("Swipe up to jump\n\nSwipe right to pause\n\nTap to punch baddies\n\nPunch timing is\ncritical,the tail end\nof your punch won't\nbe enough force",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    infoText = new PIXI.extras.BitmapText("Swipe up to jump\n\nSwipe right to pause\n\nTap to punch baddies\n\nPunch timing is\ncritical,the tail end\nof your punch won't\nbe enough force",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     infoText.scale.x = 1/GAME_SCALE;
     infoText.scale.y = 1/GAME_SCALE;
     infoText.position.x = gameWidth/GAME_SCALE/2 - infoText.width/2;
     infoText.position.y = 20 + gameHeight/GAME_SCALE/8;
     menu.addChild(infoText);
 
-    back = new PIXI.extras.BitmapText("Back",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    back = new PIXI.extras.BitmapText("Back",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     back.scale.x = 1/GAME_SCALE;
     back.scale.y = 1/GAME_SCALE;
     back.interactive = true, back.buttonMode = true;
@@ -536,14 +536,14 @@ function loadOptions() {
     background.height = gameHeight/GAME_SCALE;
     menu.addChild(background);
 
-    title = new PIXI.extras.BitmapText("Options",{font: `${largeLabelSize}px athletic-stroke`, align: "center"});
+    title = new PIXI.extras.BitmapText("Options",{font: largeLabelSize + "px athletic-stroke", align: "center"});
     title.scale.x = 1/GAME_SCALE;
     title.scale.y = 1/GAME_SCALE;
     title.position.x = 10;
     title.position.y = 10;
     menu.addChild(title);
 
-    option1 = new PIXI.extras.BitmapText((musicEnabled) ? "Music: On" : "Music: Off",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    option1 = new PIXI.extras.BitmapText((musicEnabled) ? "Music: On" : "Music: Off",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     option1.scale.x = 1/GAME_SCALE;
     option1.scale.y = 1/GAME_SCALE;
     option1.interactive = true, option1.buttonMode = true;
@@ -553,7 +553,7 @@ function loadOptions() {
     option1.position.y = 20 + gameHeight/GAME_SCALE/8;
     menu.addChild(option1);
 
-    option2 = new PIXI.extras.BitmapText((sfxEnabled) ? "SFX: On" : "SFX: Off",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    option2 = new PIXI.extras.BitmapText((sfxEnabled) ? "SFX: On" : "SFX: Off",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     option2.scale.x = 1/GAME_SCALE;
     option2.scale.y = 1/GAME_SCALE;
     option2.interactive = true, option2.buttonMode = true;
@@ -563,7 +563,7 @@ function loadOptions() {
     option2.position.y = option1.position.y + gameHeight/GAME_SCALE/8;
     menu.addChild(option2);
 
-    back = new PIXI.extras.BitmapText("Back",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    back = new PIXI.extras.BitmapText("Back",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     back.scale.x = 1/GAME_SCALE;
     back.scale.y = 1/GAME_SCALE;
     back.interactive = true, back.buttonMode = true;
@@ -596,21 +596,21 @@ function loadCredits() {
     background.height = gameHeight/GAME_SCALE;
     menu.addChild(background);
 
-    title = new PIXI.extras.BitmapText("Credits:",{font: `${largeLabelSize}px athletic-stroke`, align: "center"});
+    title = new PIXI.extras.BitmapText("Credits:",{font: largeLabelSize + "px athletic-stroke", align: "center"});
     title.scale.x = 1/GAME_SCALE;
     title.scale.y = 1/GAME_SCALE;
     title.position.x = 10;
     title.position.y = 10;
     menu.addChild(title);
 
-    infoText = new PIXI.extras.BitmapText("Design and Storyboarding: Peter Huettl\n\nMusic and Sound: Peter Huettl\n\nProgramming: Peter Huettl\n\nArt: Peter Huettl",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    infoText = new PIXI.extras.BitmapText("Design and Storyboarding: Peter Huettl\n\nMusic and Sound: Peter Huettl\n\nProgramming: Peter Huettl\n\nArt: Peter Huettl",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     infoText.scale.x = 1/GAME_SCALE;
     infoText.scale.y = 1/GAME_SCALE;
     infoText.position.x = gameWidth/GAME_SCALE/2 - infoText.width/2;
     infoText.position.y = 20 + gameHeight/GAME_SCALE/8;
     menu.addChild(infoText);
 
-    back = new PIXI.extras.BitmapText("Back",{font: `${menuTextSize}px athletic-stroke-small`, align: "center"});
+    back = new PIXI.extras.BitmapText("Back",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
     back.scale.x = 1/GAME_SCALE;
     back.scale.y = 1/GAME_SCALE;
     back.interactive = true, back.buttonMode = true;
@@ -686,21 +686,21 @@ function startGame() {
     player.sprite.play();
     stage.addChild(player.sprite);
 
-    distanceText = new PIXI.extras.BitmapText("Distance: 0 ft",{font: `${gameStatsSize}px athletic-stroke-small`, align: "left"});
+    distanceText = new PIXI.extras.BitmapText("Distance: 0 ft",{font: gameStatsSize + "px athletic-stroke-small", align: "left"});
     distanceText.scale.x = 1/GAME_SCALE;
     distanceText.scale.y = 1/GAME_SCALE;
     distanceText.position.x = 5;
     distanceText.position.y = 5;
     stage.addChild(distanceText);
 
-    punchText = new PIXI.extras.BitmapText("Punch-outs: 0",{font: `${gameStatsSize}px athletic-stroke-small`, align: "left"});
+    punchText = new PIXI.extras.BitmapText("Punch-outs: 0",{font: gameStatsSize + "px athletic-stroke-small", align: "left"});
     punchText.scale.x = 1/GAME_SCALE;
     punchText.scale.y = 1/GAME_SCALE;
     punchText.position.x = 5;
     punchText.position.y = 17;
     stage.addChild(punchText);
 
-    pausedText = new PIXI.extras.BitmapText("Paused",{font: `${gameStatsSize}px athletic-stroke-small`, align: "left"});
+    pausedText = new PIXI.extras.BitmapText("Paused",{font: gameStatsSize + "px athletic-stroke-small", align: "left"});
     pausedText.scale.x = 1/GAME_SCALE;
     pausedText.scale.y = 1/GAME_SCALE;
     pausedText.position.x = gameWidth/GAME_SCALE - 35;
@@ -708,7 +708,7 @@ function startGame() {
     pausedText.visible = false;
     stage.addChild(pausedText);
 
-    text = new PIXI.extras.BitmapText("",{font: `${gameInfoSize}px athletic-stroke-small`, align: "center"});
+    text = new PIXI.extras.BitmapText("",{font: gameInfoSize + "px athletic-stroke-small", align: "center"});
     text.scale.x = 1/GAME_SCALE;
     text.scale.y = 1/GAME_SCALE;
     text.alpha = 0;
@@ -823,7 +823,7 @@ function gameOver() {
     player.sprite.textures = textures.player.defeat;
     for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].stop();
 
-    displayText(`\n\n${goTexts[Math.floor(Math.random()*goTexts.length)]}\n\nFinal score: ${finalScore}`, 0);
+    displayText("\n\n" + goTexts[Math.floor(Math.random()*goTexts.length)] + "\n\nFinal score: " + finalScore, 0);
 }
 function clearStage() {
     while(stage.children[0]) {
@@ -931,7 +931,7 @@ function blurEventHandler(e) {
 }
 function touchstartEventHandler(e) {
     if (!inMenu) {
-        let touch = e.changedTouches[0];
+        var touch = e.changedTouches[0];
         touchInfo.startX = touch.pageX;
         touchInfo.startY = touch.pageY;
         touchInfo.startTime = new Date().getTime();
@@ -939,10 +939,10 @@ function touchstartEventHandler(e) {
 }
 function touchendEventHandler(e) {
     if (!inMenu) {
-        let touch = e.changedTouches[0];
-        let distY = touch.pageY - touchInfo.startY;
-        let distX = touch.pageX - touchInfo.startX;
-        let time = new Date().getTime() - touchInfo.startTime;
+        var touch = e.changedTouches[0];
+        var distY = touch.pageY - touchInfo.startY;
+        var distX = touch.pageX - touchInfo.startX;
+        var time = new Date().getTime() - touchInfo.startTime;
 
         // Swipe up conditional
         if (time <= SWIPE_DELAY && distY + SWIPE_THRESHOLD <= 0) {
