@@ -11,7 +11,7 @@
     <author email="ph289@nau.edu">
         Peter Huettl
     </author>
-    <icon src="www/assets/pointer.png" />
+    <icon src="icon.png" />
     <content src="index.html" />
     <access origin="*" />
     <allow-intent href="http://*/*" />
