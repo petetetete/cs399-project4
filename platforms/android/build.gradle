@@ -21,9 +21,7 @@ apply plugin: 'com.android.application'
 
 buildscript {
     repositories {
-        maven {
-           url 'https://repo1.maven.org/maven2'
-        }
+        mavenCentral()
         jcenter()
     }
 
@@ -90,6 +88,7 @@ ext {
 }
 
 // PLUGIN GRADLE EXTENSIONS START
+apply from: "cordova-plugin-crosswalk-webview/cs399-xwalk.gradle"
 // PLUGIN GRADLE EXTENSIONS END
 
 def hasBuildExtras = file('build-extras.gradle').exists()

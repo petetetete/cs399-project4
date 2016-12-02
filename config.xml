@@ -2,12 +2,12 @@
 <widget id="ph289.project4.cs399" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Punch Line</name>
     <description>
-        Hit dudes.
+        Punch your way through an infinite onslaught of thugs on your treacherous journey to the right.
     </description>
     <author email="ph289@nau.edu">
         Peter Huettl
     </author>
-    <icon src="www/assets/pointer.png" />
+    <icon src="icon.png" />
     <content src="index.html" />
     <plugin name="cordova-plugin-whitelist" spec="1" />
     <access origin="*" />

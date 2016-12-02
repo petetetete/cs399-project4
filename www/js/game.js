@@ -1,7 +1,7 @@
 
-document.addEventListener("deviceready", initGame, false);
+document.addEventListener("deviceready", onDeviceReady, false);
 
-function initGame() {
+function onDeviceReady() {
     // Some constant values that can and have been adjusted
     const GAME_SCALE = 3;
     const GRAVITY = .2;
@@ -14,8 +14,6 @@ function initGame() {
     const PUNCH_BEGIN_DELAY = 0; // Percentage of beginning punch delay
     const PUNCH_END_DELAY = .33; // Percentage of end punch delay
     const GAME_OVER_DELAY = 100;
-    const MUSIC_VOLUME = .1;
-    const SFX_VOLUME = .3;
     const SPAWN_RATE_INCREASE = 0.06;
     const ENABLE_POINTER = false;
 
@@ -43,7 +41,6 @@ function initGame() {
 
     // Objects used to store important game info
     var textures = {};
-    var sounds = {};
     var keys = {};
 
     // Variables that holds all of the potential game over screen texts and starting names
@@ -60,8 +57,6 @@ function initGame() {
     var atOpt = false;
     var restartable = false;
     var focusedGame = true;
-    var musicEnabled = true;
-    var sfxEnabled = true;
 
     // Initialize tracking variables
     var currDelay = 0;
@@ -87,36 +82,16 @@ function initGame() {
         error: function() {},
         events: [
             {name: "down", from: "play", to: "instruct"},
-            {name: "down", from: "instruct", to: "options"},
-            {name: "down", from: "options", to: "credits"},
+            {name: "down", from: "instruct", to: "credits"},
             {name: "down", from: "credits", to: "credits"},
 
             {name: "up", from: "play", to: "play"},
             {name: "up", from: "instruct", to: "play"},
-            {name: "up", from: "options", to: "instruct"},
-            {name: "up", from: "credits", to: "options"}],
+            {name: "up", from: "credits", to: "instruct"}],
         callbacks: {
             onplay: function() { movePointer(0); currState = 0; },
             oninstruct: function() { movePointer(1); currState = 1; },
-            onoptions: function() { movePointer(2); currState = 2; },
             oncredits: function() { movePointer(3); currState = 3; },
-        }
-    });
-    var optMenuState = StateMachine.create({
-        initial: {state: "back", event: "init"},
-        error: function() {},
-        events: [
-            {name: "down", from: "music", to: "sfx"},
-            {name: "down", from: "sfx", to: "back"},
-            {name: "down", from: "back", to: "back"},
-
-            {name: "up", from: "music", to: "music"},
-            {name: "up", from: "sfx", to: "music"},
-            {name: "up", from: "back", to: "sfx"}],
-        callbacks: {
-            onmusic: function() { movePointer(0); currOptState = 0; },
-            onsfx: function() { movePointer(1); currOptState = 1; },
-            onback: function() { movePointer(2); currOptState = 2; },
         }
     });
 
@@ -227,7 +202,6 @@ function initGame() {
 
                 // Check to see if this enemy is inside of the punch hitbox while the player is punching
                 if (player.punching && ((Math.abs(currSprite.position.x - player.sprite.position.x-player.sprite.width) * 2 < currSprite.width + 3*player.sprite.width/4) && (Math.abs(currSprite.position.y - player.sprite.position.y) * 2 < currSprite.height + player.sprite.height))) {
-                    playSound("punch");
                     ++punchOuts;
                     this.sprites.splice(this.sprites.indexOf(currSprite), 1);
                     enemyCont.removeChild(currSprite);
@@ -268,17 +242,6 @@ function initGame() {
         .add("assets/test.json")
         .add("fonts/athletic-stroke.fnt")
         .add("fonts/athletic-stroke-small.fnt")
-        .add("audio/music1.mp3")
-        .add("audio/music2.mp3")
-        .add("audio/music3.mp3")
-        .add("audio/thump.mp3")
-        .add("audio/success.mp3")
-        .add("audio/defeat.mp3")
-        .add("audio/woosh.mp3")
-        .add("audio/punch.mp3")
-        .add("audio/countdown1.mp3")
-        .add("audio/countdown2.mp3")
-        .add("audio/jump.mp3")
         .load(ready);
 
     // Kicks off main game preperation and set up
@@ -340,34 +303,6 @@ function initGame() {
         textures["closeBack"] = PIXI.Texture.fromFrame("close-back.png");
         textures["ground"] = PIXI.Texture.fromFrame("ground.png");
 
-        // Load music
-        sounds["music1"] = PIXI.audioManager.getAudio("audio/music1.mp3");
-        sounds["music2"] = PIXI.audioManager.getAudio("audio/music2.mp3");
-        sounds["music3"] = PIXI.audioManager.getAudio("audio/music3.mp3");
-
-        // Load sound effects
-        sounds["thump"] = PIXI.audioManager.getAudio("audio/thump.mp3");
-        sounds["success"] = PIXI.audioManager.getAudio("audio/success.mp3");
-        sounds["defeat"] = PIXI.audioManager.getAudio("audio/defeat.mp3");
-        sounds["woosh"] = PIXI.audioManager.getAudio("audio/woosh.mp3");
-        sounds["punch"] = PIXI.audioManager.getAudio("audio/punch.mp3");
-        sounds["countdown1"] = PIXI.audioManager.getAudio("audio/countdown1.mp3");
-        sounds["countdown2"] = PIXI.audioManager.getAudio("audio/countdown2.mp3");
-        sounds["jump"] = PIXI.audioManager.getAudio("audio/jump.mp3");
-
-        // Adjust volumes
-        sounds.music1.volume = MUSIC_VOLUME;
-        sounds.music2.volume = MUSIC_VOLUME;
-        sounds.music3.volume = MUSIC_VOLUME;
-        sounds.thump.volume = SFX_VOLUME;
-        sounds.success.volume = SFX_VOLUME;
-        sounds.defeat.volume = SFX_VOLUME;
-        sounds.woosh.volume = SFX_VOLUME;
-        sounds.punch.volume = SFX_VOLUME - .2;
-        sounds.countdown1.volume = SFX_VOLUME;
-        sounds.countdown2.volume = SFX_VOLUME;
-        sounds.jump.volume = SFX_VOLUME;
-
         // Start the player off at the main menu and begin main game loop
         loadMainMenu(true);
         animate();
@@ -375,9 +310,6 @@ function initGame() {
 
     // Function used to create and display the starting menu
     function loadMainMenu(first) {
-
-        // Do not play change screen noise if the player has just started the game
-        if (first != true) playSound("success");
         
         // Reset game state variables and wipe the screen
         clearStage();
@@ -421,16 +353,6 @@ function initGame() {
         instruct.position.y = play.position.y + gameHeight/GAME_SCALE/10;
         menu.addChild(instruct);
 
-        options = new PIXI.extras.BitmapText("Options",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
-        options.scale.x = 1/GAME_SCALE;
-        options.scale.y = 1/GAME_SCALE;
-        options.interactive = true, options.buttonMode = true;
-        options.on("mousedown", loadOptions), options.on("touchstart", loadOptions), options.on("mouseover", menuHover);
-        options.action = loadOptions;
-        options.position.x = gameWidth/GAME_SCALE/2 - options.width/2;
-        options.position.y = instruct.position.y + gameHeight/GAME_SCALE/10;
-        menu.addChild(options);
-
         credits = new PIXI.extras.BitmapText("Credits",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
         credits.scale.x = 1/GAME_SCALE;
         credits.scale.y = 1/GAME_SCALE;
@@ -438,7 +360,7 @@ function initGame() {
         credits.on("mousedown", loadCredits), credits.on("touchstart", loadCredits), credits.on("mouseover", menuHover);
         credits.action = loadCredits;
         credits.position.x = gameWidth/GAME_SCALE/2 - credits.width/2;
-        credits.position.y = options.position.y + gameHeight/GAME_SCALE/10;
+        credits.position.y = instruct.position.y + gameHeight/GAME_SCALE/10;
         menu.addChild(credits);
 
         pointer = new PIXI.Sprite(textures.pointer);
@@ -470,7 +392,6 @@ function initGame() {
 
     // Function responsible for changing the location of the pointer, called by state machine
     function movePointer(index) {
-        playSound("thump");
         elem = menu.getChildAt(index+2);
         createjs.Tween.removeTweens(pointer.position);
         createjs.Tween.get(pointer.position).to({y: elem.position.y, x: elem.position.x - pointer.width - 10}, 500, createjs.Ease.cubicOut);
@@ -478,8 +399,6 @@ function initGame() {
 
     // Function to create and display the instructions menu screen
     function loadInstructions() {
-
-        playSound("success");
 
         // Reset game state variables and wipe the screen
         clearStage();
@@ -523,71 +442,8 @@ function initGame() {
         stage.addChild(menu);
     }
 
-    // Function to create and display the options menu screen
-    function loadOptions() {
-
-        playSound("success");
-
-        // Reset game state variables and wipe the screen
-        clearStage();
-        atMainMenu = false;
-        atOpt = true;
-
-        // Create options menu
-        menu = new PIXI.Container();
-        background = new PIXI.Sprite(textures.mainMenu);
-        background.width = gameWidth/GAME_SCALE;
-        background.height = gameHeight/GAME_SCALE;
-        menu.addChild(background);
-
-        title = new PIXI.extras.BitmapText("Options",{font: largeLabelSize + "px athletic-stroke", align: "center"});
-        title.scale.x = 1/GAME_SCALE;
-        title.scale.y = 1/GAME_SCALE;
-        title.position.x = 10;
-        title.position.y = 10;
-        menu.addChild(title);
-
-        option1 = new PIXI.extras.BitmapText((musicEnabled) ? "Music: On" : "Music: Off",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
-        option1.scale.x = 1/GAME_SCALE;
-        option1.scale.y = 1/GAME_SCALE;
-        option1.interactive = true, option1.buttonMode = true;
-        option1.on("mousedown", toggleMusic), option1.on("touchstart", toggleMusic), option1.on("mouseover", menuHover);
-        option1.action = toggleMusic;
-        option1.position.x = gameWidth/GAME_SCALE/2 - option1.width/2;
-        option1.position.y = 20 + gameHeight/GAME_SCALE/8;
-        menu.addChild(option1);
-
-        option2 = new PIXI.extras.BitmapText((sfxEnabled) ? "SFX: On" : "SFX: Off",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
-        option2.scale.x = 1/GAME_SCALE;
-        option2.scale.y = 1/GAME_SCALE;
-        option2.interactive = true, option2.buttonMode = true;
-        option2.on("mousedown", toggleSFX), option2.on("touchstart", toggleSFX), option2.on("mouseover", menuHover);
-        option2.action = toggleSFX;
-        option2.position.x = gameWidth/GAME_SCALE/2 - option2.width/2;
-        option2.position.y = option1.position.y + gameHeight/GAME_SCALE/8;
-        menu.addChild(option2);
-
-        back = new PIXI.extras.BitmapText("Back",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
-        back.scale.x = 1/GAME_SCALE;
-        back.scale.y = 1/GAME_SCALE;
-        back.interactive = true, back.buttonMode = true;
-        back.on("mousedown", loadMainMenu), back.on("touchstart", loadMainMenu), back.on("mouseover", menuHover);
-        back.action = loadMainMenu;
-        back.position.x = gameWidth/GAME_SCALE - back.width - 10;
-        back.position.y = gameHeight/GAME_SCALE - 3*back.height/2;
-        menu.addChild(back);
-
-        pointer = new PIXI.Sprite(textures.pointer);
-        pointer.position.x = menu.getChildAt(currOptState+2).position.x - pointer.width - 10;
-        pointer.position.y = menu.getChildAt(currOptState+2).position.y;
-        menu.addChild(pointer);
-        stage.addChild(menu);
-    }
-
     // Function to create and display the credits menu screen
     function loadCredits() {
-
-        playSound("success");
 
         // Reset game state variables and wipe the screen
         clearStage();
@@ -607,7 +463,7 @@ function initGame() {
         title.position.y = 10;
         menu.addChild(title);
 
-        infoText = new PIXI.extras.BitmapText("Design and Storyboarding: Peter Huettl\n\nMusic and Sound: Peter Huettl\n\nProgramming: Peter Huettl\n\nArt: Peter Huettl",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
+        infoText = new PIXI.extras.BitmapText("Design and Storyboarding: Peter Huettl\n\nProgramming: Peter Huettl\n\nArt: Peter Huettl",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
         infoText.scale.x = 1/GAME_SCALE;
         infoText.scale.y = 1/GAME_SCALE;
         infoText.position.x = gameWidth/GAME_SCALE/2 - infoText.width/2;
@@ -721,12 +577,11 @@ function initGame() {
 
     /* BEGIN functions that have to do with updating game states */
     function updateIntro() {
-        if (gameTick === 0) displayText("3", COUNTDOWN_GAP), playSound("countdown1");
-        if (gameTick === COUNTDOWN_GAP) displayText("2", COUNTDOWN_GAP), playSound("countdown1");
-        if (gameTick === 2*COUNTDOWN_GAP) displayText("1", COUNTDOWN_GAP), playSound("countdown1");
+        if (gameTick === 0) displayText("3", COUNTDOWN_GAP);
+        if (gameTick === COUNTDOWN_GAP) displayText("2", COUNTDOWN_GAP);
+        if (gameTick === 2*COUNTDOWN_GAP) displayText("1", COUNTDOWN_GAP);
         if (gameTick === 3*COUNTDOWN_GAP) {
             displayText("Go", COUNTDOWN_GAP);
-            playSound("countdown2");
             running = true;
             intro = false;
             gameTick = 0;
@@ -775,14 +630,6 @@ function initGame() {
             currText += "\n\nTap to play again\n\nSwipe right to exit";
         }
     }
-    function updateMusic() {
-        if (!sounds.music1.playing && !sounds.music2.playing && !sounds.music3.playing) {
-            currSong = (currSong+1)%3;
-            if (currSong === 0) sounds.music1.play();
-            else if (currSong === 1) sounds.music2.play();
-            else sounds.music3.play();
-        }
-    }
     /* END functions that have to do with updating game states */
 
     /* BEGIN functions that have to do with doing completing distinct, finite processes */
@@ -812,8 +659,6 @@ function initGame() {
     }
     function gameOver() {
 
-        playSound("defeat");
-
         playing = false;
         running = false;
         atGameOver = true;
@@ -832,38 +677,6 @@ function initGame() {
     function clearStage() {
         while(stage.children[0]) {
             stage.removeChild(stage.children[0]);
-        }
-    }
-    function playSound(name) {
-        if (sfxEnabled) {
-            sounds[name].stop();
-            sounds[name].play();
-        }
-    }
-    function toggleMusic() {
-        musicEnabled = !musicEnabled;
-        option1.text = (musicEnabled) ? "Music: On" : "Music: Off";
-    }
-    function toggleSFX() {
-        sfxEnabled = !sfxEnabled;
-        option2.text = (sfxEnabled) ? "SFX: On" : "SFX: Off";
-    }
-    function saveOptions() {
-        name = document.getElementById("hs-input").value.replace(/[^\w\s]/gi, '');
-        name = (startNames.indexOf(name) > -1) ? "" : name;
-        settings = {
-            "music": musicEnabled,
-            "sfx": sfxEnabled,
-            "hsName": name,
-        }
-        localStorage.setItem("settings", JSON.stringify(settings));
-    }
-    function fetchOptions() {
-        if (localStorage.settings) {
-            settings = JSON.parse(localStorage.settings);
-            musicEnabled = settings.music;
-            sfxEnabled = settings.sfx;
-            document.getElementById("hs-input").value = (settings.hsName) ? settings.hsName : startNames[Math.floor(Math.random()*startNames.length)];
         }
     }
     /* END functions that have to do with doing completing distinct, finite processes */
@@ -887,18 +700,15 @@ function initGame() {
             else if (e.which === 13 || e.which === 32) { 
                 if (atMainMenu) menu.getChildAt(currState+2).action(); 
                 else if (atOpt) {
-                    playSound("success");
                     menu.getChildAt(currOptState+2).action(); 
                 }
             }
         }
         else {
             if ((e.which === 32 || e.which === 87 || e.which === 38) && !player.inAir()) {
-                playSound("jump");
                 player.dy = -player.jumpPower;
             }
             if (e.which === 13 && !player.isAttacking() && running) {
-                playSound("woosh");
                 player.attackTime = ATTACK_TIME;
             }
             if (e.which === 27) {
@@ -951,7 +761,6 @@ function initGame() {
             // Swipe up conditional
             if (time <= SWIPE_DELAY && distY + SWIPE_THRESHOLD <= 0) {
                 if (!player.inAir()) {
-                    playSound("jump");
                     player.dy = -player.jumpPower;
                 }
             }
@@ -975,7 +784,6 @@ function initGame() {
             // Ttap conditional
             else if (time <= TAP_DELAY && Math.abs(distX) <= TAP_THRESHOLD && Math.abs(distY) <= TAP_THRESHOLD) {
                 if (!player.isAttacking() && running) {
-                    playSound("woosh");
                     player.attackTime = ATTACK_TIME;
                 }
                 else if (restartable) startGame();
@@ -987,10 +795,6 @@ function initGame() {
     // Main game loop!
     function animate() {
         requestAnimationFrame(animate);
-
-        // Deal with music changing
-        if (musicEnabled) updateMusic();
-        else sounds.music1.stop(), sounds.music2.stop(), sounds.music3.stop();
 
         // If there exists text, handle displaying it
         if (currText != "") updateText();
