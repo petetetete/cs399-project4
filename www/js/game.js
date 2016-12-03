@@ -1,5 +1,6 @@
 
 document.addEventListener("deviceready", onDeviceReady, false);
+window.addEventListener("orientationchange", onDeviceReady, true);
 
 function onDeviceReady() {
     // Some constant values that can and have been adjusted
@@ -29,7 +30,7 @@ function onDeviceReady() {
 
     // Text sizes
     var mainTitleSize = 46;
-    var largeLabelSize = 38;
+    var largeLabelSize = 40;
     var menuTextSize = 26;
     var gameStatsSize = 22;
     var gameInfoSize = 26;
@@ -41,7 +42,6 @@ function onDeviceReady() {
 
     // Objects used to store important game info
     var textures = {};
-    var keys = {};
 
     // Variables that holds all of the potential game over screen texts and starting names
     var goTexts = ["Whelp, got'cha", "Maybe try running...", "C'mon smalls", "RIP"];
@@ -219,8 +219,6 @@ function onDeviceReady() {
     };
 
     // Add event listeners to the document
-    document.addEventListener("keydown", keydownEventHandler);
-    document.addEventListener("keyup", keyupEventHandler);
     document.addEventListener("touchstart", touchstartEventHandler);
     document.addEventListener("touchend", touchendEventHandler);
 
@@ -337,7 +335,7 @@ function onDeviceReady() {
         play.scale.x = 1/GAME_SCALE;
         play.scale.y = 1/GAME_SCALE;
         play.interactive = true, play.buttonMode = true;
-        play.on("mousedown", startGame), play.on("touchstart", startGame), play.on("mouseover", menuHover);
+        play.on("mousedown", startGame), play.on("touchstart", startGame);
         play.action = startGame;
         play.position.x = gameWidth/GAME_SCALE/2 - play.width/2;
         play.position.y = title.position.y + gameHeight/GAME_SCALE/6;
@@ -347,7 +345,7 @@ function onDeviceReady() {
         instruct.scale.x = 1/GAME_SCALE;
         instruct.scale.y = 1/GAME_SCALE;
         instruct.interactive = true, instruct.buttonMode = true;
-        instruct.on("mousedown", loadInstructions), instruct.on("touchstart", loadInstructions), instruct.on("mouseover", menuHover);
+        instruct.on("mousedown", loadInstructions), instruct.on("touchstart", loadInstructions);
         instruct.action = loadInstructions;
         instruct.position.x = gameWidth/GAME_SCALE/2 - instruct.width/2;
         instruct.position.y = play.position.y + gameHeight/GAME_SCALE/10;
@@ -357,7 +355,7 @@ function onDeviceReady() {
         credits.scale.x = 1/GAME_SCALE;
         credits.scale.y = 1/GAME_SCALE;
         credits.interactive = true, credits.buttonMode = true;
-        credits.on("mousedown", loadCredits), credits.on("touchstart", loadCredits), credits.on("mouseover", menuHover);
+        credits.on("mousedown", loadCredits), credits.on("touchstart", loadCredits);
         credits.action = loadCredits;
         credits.position.x = gameWidth/GAME_SCALE/2 - credits.width/2;
         credits.position.y = instruct.position.y + gameHeight/GAME_SCALE/10;
@@ -414,8 +412,7 @@ function onDeviceReady() {
         title = new PIXI.extras.BitmapText("Instructions",{font: largeLabelSize + "px athletic-stroke", align: "center"});
         title.scale.x = 1/GAME_SCALE;
         title.scale.y = 1/GAME_SCALE;
-        // title.position.x = gameWidth/GAME_SCALE/2 - options.width/2;
-        title.position.x = 10;
+        title.position.x = gameWidth/GAME_SCALE/2 - title.width/2;
         title.position.y = 10;
         menu.addChild(title);
 
@@ -456,14 +453,14 @@ function onDeviceReady() {
         background.height = gameHeight/GAME_SCALE;
         menu.addChild(background);
 
-        title = new PIXI.extras.BitmapText("Credits:",{font: largeLabelSize + "px athletic-stroke", align: "center"});
+        title = new PIXI.extras.BitmapText("Credits",{font: largeLabelSize + "px athletic-stroke", align: "center"});
         title.scale.x = 1/GAME_SCALE;
         title.scale.y = 1/GAME_SCALE;
-        title.position.x = 10;
+        title.position.x = gameWidth/GAME_SCALE/2 - title.width/2;
         title.position.y = 10;
         menu.addChild(title);
 
-        infoText = new PIXI.extras.BitmapText("Design and Storyboarding: Peter Huettl\n\nProgramming: Peter Huettl\n\nArt: Peter Huettl",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
+        infoText = new PIXI.extras.BitmapText("Design: Peter H\n\nProgramming: Peter H\n\nArt: Peter H",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
         infoText.scale.x = 1/GAME_SCALE;
         infoText.scale.y = 1/GAME_SCALE;
         infoText.position.x = gameWidth/GAME_SCALE/2 - infoText.width/2;
@@ -682,59 +679,6 @@ function onDeviceReady() {
     /* END functions that have to do with doing completing distinct, finite processes */
 
     /* BEGIN event handler functions */
-    function keydownEventHandler(e) {
-
-        if (!focusedGame) return
-        keys[e.which] = true;
-
-        if (inMenu) {
-            if (e.which === 87 || e.which === 38) {
-                if (atOpt) optMenuState.up();
-                else if (atMainMenu) menuState.up();
-            }
-            else if (e.which === 83 || e.which === 40) { 
-                if (atOpt) optMenuState.down();
-                else if (atMainMenu) menuState.down();
-            }
-            else if ((e.which === 27 || e.which === 13 || e.which === 32) && !atMainMenu && !atOpt) loadMainMenu();
-            else if (e.which === 13 || e.which === 32) { 
-                if (atMainMenu) menu.getChildAt(currState+2).action(); 
-                else if (atOpt) {
-                    menu.getChildAt(currOptState+2).action(); 
-                }
-            }
-        }
-        else {
-            if ((e.which === 32 || e.which === 87 || e.which === 38) && !player.inAir()) {
-                player.dy = -player.jumpPower;
-            }
-            if (e.which === 13 && !player.isAttacking() && running) {
-                player.attackTime = ATTACK_TIME;
-            }
-            if (e.which === 27) {
-                playing = !playing;
-                if (playing) {
-                    pausedText.visible = false;
-                    player.sprite.play();
-                    for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].play();
-                }
-                else {
-                    pausedText.visible = true;
-                    player.sprite.stop();
-                    for (var i = 0; i < enemies.sprites.length; i++) enemies.sprites[i].stop();
-                }
-            }
-            if (e.which === 13 && restartable) startGame();
-            if ((e.which === 27 || e.which === 8) && restartable) loadMainMenu();
-        }
-        
-        if([32, 37, 38, 39, 40].indexOf(e.which) > -1) {
-            e.preventDefault();
-        }
-    }
-    function keyupEventHandler(e) {
-        keys[e.which] = false;
-    }
     function focusEventHandler(e) {
         focusedGame = false;
         input = document.getElementById("hs-input");
