@@ -1,6 +1,5 @@
-
 document.addEventListener("deviceready", onDeviceReady, false);
-window.addEventListener("orientationchange", onDeviceReady, true);
+window.addEventListener("orientationchange", function() { window.location.reload(true); }, true);
 
 function onDeviceReady() {
     // Some constant values that can and have been adjusted
@@ -9,7 +8,7 @@ function onDeviceReady() {
     const DISTANCE_DIVISOR = 20;
     const RUNNING_THRESHOLD = 2;
     const COUNTDOWN_GAP = 60;
-    const GAME_TEXT_Y_OFFSET = 35;
+    const GAME_TEXT_Y_OFFSET = 30;
     const PLAYER_X_OFFSET = 5;
     const ATTACK_TIME = 40;
     const PUNCH_BEGIN_DELAY = 0; // Percentage of beginning punch delay
@@ -18,22 +17,23 @@ function onDeviceReady() {
     const SPAWN_RATE_INCREASE = 0.06;
     const ENABLE_POINTER = false;
 
-    const SWIPE_DELAY = 200;
-    const SWIPE_THRESHOLD = 130;
-    const TAP_DELAY = 300;
+    // Tap control constants
+    const SWIPE_DELAY = 300;
+    const SWIPE_THRESHOLD = 115;
+    const TAP_DELAY = 325;
     const TAP_THRESHOLD = 50;
+
+    // Text sizes
+    const MAIN_TITLE_SIZE = 46;
+    const LARGE_LABEL_SIZE = 40;
+    const MENU_TEXT_SIZE = 24;
+    const GAME_STATS_SIZE = 22;
+    const GAME_INFO_SIZE = 26;
 
     // Get game dimensions based off window
     var gameWidth = window.innerWidth;
     var gameHeight = window.innerHeight;
     var groundLevel = 3*gameHeight/GAME_SCALE/4;
-
-    // Text sizes
-    var mainTitleSize = 46;
-    var largeLabelSize = 40;
-    var menuTextSize = 26;
-    var gameStatsSize = 22;
-    var gameInfoSize = 26;
 
     // Variables used for displaying and updating text
     var currText = "";
@@ -73,27 +73,6 @@ function onDeviceReady() {
         startY: null,
         startTime: null
     };
-
-    // Variables having to do with the state machines in use
-    var currState = 0;
-    var currOptState = 2;
-    var menuState = StateMachine.create({
-        initial: {state: "play", event: "init"},
-        error: function() {},
-        events: [
-            {name: "down", from: "play", to: "instruct"},
-            {name: "down", from: "instruct", to: "credits"},
-            {name: "down", from: "credits", to: "credits"},
-
-            {name: "up", from: "play", to: "play"},
-            {name: "up", from: "instruct", to: "play"},
-            {name: "up", from: "credits", to: "instruct"}],
-        callbacks: {
-            onplay: function() { movePointer(0); currState = 0; },
-            oninstruct: function() { movePointer(1); currState = 1; },
-            oncredits: function() { movePointer(3); currState = 3; },
-        }
-    });
 
     // Fetch gameport and add the renderer
     var gameport = document.getElementById("gameport");
@@ -324,14 +303,14 @@ function onDeviceReady() {
         background.height = gameHeight/GAME_SCALE;
         menu.addChild(background);
 
-        title = new PIXI.extras.BitmapText("Punch Line",{font: mainTitleSize + "px athletic-stroke", align: "center"});
+        title = new PIXI.extras.BitmapText("Punch Line",{font: MAIN_TITLE_SIZE + "px athletic-stroke", align: "center"});
         title.scale.x = 1/GAME_SCALE;
         title.scale.y = 1/GAME_SCALE;
         title.position.x = gameWidth/GAME_SCALE/2 - title.width/2;
         title.position.y = gameHeight/GAME_SCALE/4 - title.height/2;
         menu.addChild(title);
 
-        play = new PIXI.extras.BitmapText("Play Game",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
+        play = new PIXI.extras.BitmapText("Play Game",{font: MENU_TEXT_SIZE + "px athletic-stroke-small", align: "center"});
         play.scale.x = 1/GAME_SCALE;
         play.scale.y = 1/GAME_SCALE;
         play.interactive = true, play.buttonMode = true;
@@ -341,7 +320,7 @@ function onDeviceReady() {
         play.position.y = title.position.y + gameHeight/GAME_SCALE/6;
         menu.addChild(play);
 
-        instruct = new PIXI.extras.BitmapText("Instructions",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
+        instruct = new PIXI.extras.BitmapText("Instructions",{font: MENU_TEXT_SIZE + "px athletic-stroke-small", align: "center"});
         instruct.scale.x = 1/GAME_SCALE;
         instruct.scale.y = 1/GAME_SCALE;
         instruct.interactive = true, instruct.buttonMode = true;
@@ -351,7 +330,7 @@ function onDeviceReady() {
         instruct.position.y = play.position.y + gameHeight/GAME_SCALE/10;
         menu.addChild(instruct);
 
-        credits = new PIXI.extras.BitmapText("Credits",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
+        credits = new PIXI.extras.BitmapText("Credits",{font: MENU_TEXT_SIZE + "px athletic-stroke-small", align: "center"});
         credits.scale.x = 1/GAME_SCALE;
         credits.scale.y = 1/GAME_SCALE;
         credits.interactive = true, credits.buttonMode = true;
@@ -362,30 +341,10 @@ function onDeviceReady() {
         menu.addChild(credits);
 
         pointer = new PIXI.Sprite(textures.pointer);
-        pointer.position.x = menu.getChildAt(currState+2).position.x - pointer.width - 10;
-        pointer.position.y = menu.getChildAt(currState+2).position.y;
+        pointer.position.x = play.position.x - pointer.width - 10;
+        pointer.position.y = play.position.y;
         menu.addChild(pointer);
         stage.addChild(menu);
-    }
-
-    // Function to manage menu hover change
-    function menuHover(e){
-        targI = menu.children.indexOf(e.target);
-        if (atMainMenu) {
-            diff = targI-(currState+2);
-            for (var i = 0; i < Math.abs(diff); i++) {
-                if (diff < 0) menuState.up();
-                else menuState.down();
-            }
-        }
-        else {
-            diff = targI-(currOptState+2);
-            for (var i = 0; i < Math.abs(diff); i++) {
-                if (diff < 0) optMenuState.up();
-                else optMenuState.down();
-            }
-        }
-        
     }
 
     // Function responsible for changing the location of the pointer, called by state machine
@@ -409,21 +368,21 @@ function onDeviceReady() {
         background.height = gameHeight/GAME_SCALE;
         menu.addChild(background);
 
-        title = new PIXI.extras.BitmapText("Instructions",{font: largeLabelSize + "px athletic-stroke", align: "center"});
+        title = new PIXI.extras.BitmapText("Instructions",{font: LARGE_LABEL_SIZE + "px athletic-stroke", align: "center"});
         title.scale.x = 1/GAME_SCALE;
         title.scale.y = 1/GAME_SCALE;
         title.position.x = gameWidth/GAME_SCALE/2 - title.width/2;
         title.position.y = 10;
         menu.addChild(title);
 
-        infoText = new PIXI.extras.BitmapText("Swipe up to jump\n\nSwipe right to pause\n\nTap to punch baddies\n\nPunch timing is\ncritical,the tail end\nof your punch won't\nbe enough force",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
+        infoText = new PIXI.extras.BitmapText("Swipe up to jump\n\nSwipe down to pause\n\nTap to punch baddies\n\nPunch timing is\ncritical,the tail end\nof your punch won't\nbe enough force",{font: MENU_TEXT_SIZE + "px athletic-stroke-small", align: "center"});
         infoText.scale.x = 1/GAME_SCALE;
         infoText.scale.y = 1/GAME_SCALE;
         infoText.position.x = gameWidth/GAME_SCALE/2 - infoText.width/2;
-        infoText.position.y = 20 + gameHeight/GAME_SCALE/8;
+        infoText.position.y = 15 + gameHeight/GAME_SCALE/8;
         menu.addChild(infoText);
 
-        back = new PIXI.extras.BitmapText("Back",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
+        back = new PIXI.extras.BitmapText("Back",{font: MENU_TEXT_SIZE + "px athletic-stroke-small", align: "center"});
         back.scale.x = 1/GAME_SCALE;
         back.scale.y = 1/GAME_SCALE;
         back.interactive = true, back.buttonMode = true;
@@ -453,21 +412,21 @@ function onDeviceReady() {
         background.height = gameHeight/GAME_SCALE;
         menu.addChild(background);
 
-        title = new PIXI.extras.BitmapText("Credits",{font: largeLabelSize + "px athletic-stroke", align: "center"});
+        title = new PIXI.extras.BitmapText("Credits",{font: LARGE_LABEL_SIZE + "px athletic-stroke", align: "center"});
         title.scale.x = 1/GAME_SCALE;
         title.scale.y = 1/GAME_SCALE;
         title.position.x = gameWidth/GAME_SCALE/2 - title.width/2;
         title.position.y = 10;
         menu.addChild(title);
 
-        infoText = new PIXI.extras.BitmapText("Design: Peter H\n\nProgramming: Peter H\n\nArt: Peter H",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
+        infoText = new PIXI.extras.BitmapText("Design: Peter H\n\nProgramming: Peter H\n\nArt: Peter H",{font: MENU_TEXT_SIZE + "px athletic-stroke-small", align: "center"});
         infoText.scale.x = 1/GAME_SCALE;
         infoText.scale.y = 1/GAME_SCALE;
         infoText.position.x = gameWidth/GAME_SCALE/2 - infoText.width/2;
-        infoText.position.y = 20 + gameHeight/GAME_SCALE/8;
+        infoText.position.y = 15 + gameHeight/GAME_SCALE/8;
         menu.addChild(infoText);
 
-        back = new PIXI.extras.BitmapText("Back",{font: menuTextSize + "px athletic-stroke-small", align: "center"});
+        back = new PIXI.extras.BitmapText("Back",{font: MENU_TEXT_SIZE + "px athletic-stroke-small", align: "center"});
         back.scale.x = 1/GAME_SCALE;
         back.scale.y = 1/GAME_SCALE;
         back.interactive = true, back.buttonMode = true;
@@ -543,21 +502,21 @@ function onDeviceReady() {
         player.sprite.play();
         stage.addChild(player.sprite);
 
-        distanceText = new PIXI.extras.BitmapText("Distance: 0 ft",{font: gameStatsSize + "px athletic-stroke-small", align: "left"});
+        distanceText = new PIXI.extras.BitmapText("Distance: 0 ft",{font: GAME_STATS_SIZE + "px athletic-stroke-small", align: "left"});
         distanceText.scale.x = 1/GAME_SCALE;
         distanceText.scale.y = 1/GAME_SCALE;
         distanceText.position.x = 5;
         distanceText.position.y = 5;
         stage.addChild(distanceText);
 
-        punchText = new PIXI.extras.BitmapText("Punch-outs: 0",{font: gameStatsSize + "px athletic-stroke-small", align: "left"});
+        punchText = new PIXI.extras.BitmapText("Punch-outs: 0",{font: GAME_STATS_SIZE + "px athletic-stroke-small", align: "left"});
         punchText.scale.x = 1/GAME_SCALE;
         punchText.scale.y = 1/GAME_SCALE;
         punchText.position.x = 5;
         punchText.position.y = 17;
         stage.addChild(punchText);
 
-        pausedText = new PIXI.extras.BitmapText("Paused",{font: gameStatsSize + "px athletic-stroke-small", align: "left"});
+        pausedText = new PIXI.extras.BitmapText("Paused",{font: GAME_STATS_SIZE + "px athletic-stroke-small", align: "left"});
         pausedText.scale.x = 1/GAME_SCALE;
         pausedText.scale.y = 1/GAME_SCALE;
         pausedText.position.x = gameWidth/GAME_SCALE - 35;
@@ -565,7 +524,7 @@ function onDeviceReady() {
         pausedText.visible = false;
         stage.addChild(pausedText);
 
-        text = new PIXI.extras.BitmapText("",{font: gameInfoSize + "px athletic-stroke-small", align: "center"});
+        text = new PIXI.extras.BitmapText("",{font: GAME_INFO_SIZE + "px athletic-stroke-small", align: "center"});
         text.scale.x = 1/GAME_SCALE;
         text.scale.y = 1/GAME_SCALE;
         text.alpha = 0;
@@ -624,7 +583,7 @@ function onDeviceReady() {
     function updateGameOver() {
         if (++currDelay === GAME_OVER_DELAY) {
             restartable = true;
-            currText += "\n\nTap to play again\n\nSwipe right to exit";
+            currText += "\n\nTap to play again\n\nSwipe down to exit";
         }
     }
     /* END functions that have to do with updating game states */
@@ -708,8 +667,8 @@ function onDeviceReady() {
                     player.dy = -player.jumpPower;
                 }
             }
-            // Swipe right conditional
-            else if (time <= SWIPE_DELAY && distX - TAP_THRESHOLD >= 0) {
+            // Swipe down conditional
+            else if (time <= SWIPE_DELAY && distY - SWIPE_THRESHOLD >= 0) {
                 if (running) {
                     playing = !playing;
                     if (playing) {
@@ -725,7 +684,7 @@ function onDeviceReady() {
                 }
                 else if (restartable) loadMainMenu();
             }
-            // Ttap conditional
+            // Tap conditional
             else if (time <= TAP_DELAY && Math.abs(distX) <= TAP_THRESHOLD && Math.abs(distY) <= TAP_THRESHOLD) {
                 if (!player.isAttacking() && running) {
                     player.attackTime = ATTACK_TIME;

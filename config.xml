@@ -28,7 +28,6 @@
     <engine name="ios" spec="~4.2.1" />
 
     <!-- Preferences -->
-    <preference name="orientation" value="portrait" />
     <preference name="fullscreen" value="true" />
     <preference name="permissions" value="none" />
 </widget>
